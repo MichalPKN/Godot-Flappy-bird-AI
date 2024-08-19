@@ -1,5 +1,5 @@
 Requires godot python addon/asset/module (too big for this repo, install it through asset library)  
-![AI bird showcase](assets/flappy-AI.gif)
+![Uploading flappy-AI.gif…]()
 highscore: 99  
 deep Q reinforcement learning  
 4 inputs - bird y velocity, y distances to bottom and top pipe, x distance to right edge pipe  
