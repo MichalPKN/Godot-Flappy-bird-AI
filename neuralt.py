@@ -24,13 +24,14 @@ class Linear_QNet_3h(nn.Module):
 		x = self.linear3(x)
 		return x
 
-	def save(self, file_name='model_3h.pth'):
+	def save(self, file_name='model_new.pth'):
 		model_folder_path = './model'
 		if not os.path.exists(model_folder_path):
 			os.makedirs(model_folder_path)
 
 		file_name = os.path.join(model_folder_path, file_name)
 		torch.save(self.state_dict(), file_name)
+	
 
 class Linear_QNet(nn.Module):
 	def __init__(self, input_size, hidden_size, output_size):
@@ -100,21 +101,24 @@ class QTrainer:
 @exposed
 class neuralt(Node):
 	
-	training = True
+	training = False
+	best_model = True
 	n_games = 0
 	epsilon = 0 #randomness
 	gamma = 0.9 #discount rate, play around <1, default 0.9
 	LR = 0.001
 	record = 0
-	memory = deque(maxlen=100_000)
+	memory = deque(maxlen=10_000) #default 100_000
 	#model = Linear_QNet(4, 128, 2) #input(state), hidden, output
-	model = Linear_QNet_3h(4, 128, 64, 2)
+	model = Linear_QNet_3h(4, 80, 40, 2)
 	trainer = QTrainer(model, lr=LR, gamma=gamma)
-	BATCH_SIZE = 1000 #default 1000
+	BATCH_SIZE = 64 #default 1000
 
 	
 	def _ready(self):
 		print("model ready")
+		if self.best_model:
+			self.model.load_state_dict(torch.load('./model/model_3h.pth', weights_only=True))
 	
 	def train_short_memory(self, state_old, action, reward, state, done):
 		action = [1,0] if action else [0,1]
@@ -138,31 +142,34 @@ class neuralt(Node):
 	#play around with this maybe
 	def get_action(self, state):
 		# random moves: tradeoff exploration / exploitation
-		self.epsilon = 100 - self.n_games
-		action = random.randint(0,1)
+		action = 0
+		if self.training:
+			self.epsilon = 120 - self.n_games
 		if random.randint(0, 200) < self.epsilon:
-			action = 1 if random.randint(0,13) > 10 else 0
+			action = 1 if random.randint(0,13) > 11 else 0
 		else:
 			state0 = torch.tensor(state, dtype=torch.float)
 			prediction = self.model(state0)
 			#print('prediction: ', prediction.item())
 			action = 1 if torch.argmax(prediction).item() == 0 else 0
-			#print(prediction, action)
 		
 		return action
 	
 	def done(self, score):
 		#train long memory
 		self.n_games += 1
-		self.train_long_memory()
+		#self.train_long_memory()
 		
 		if score > self.record:
 			self.record = score
-			self.model.save()
+			if self.training:
+				self.model.save()
 		
 		print('Game', self.n_games, 'Score', score, 'Record:', self.record)
+		#print('Memory len:', len(self.memory))
 		
 		#maybe plot with matplotlib later
 
 	def hello_world(self):
 		print("hello world")
+		

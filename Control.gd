@@ -19,7 +19,7 @@ func _ready():
 func _on_CheckButton_toggled(button_pressed):
 	if button_pressed:
 		Engine.time_scale = 1
-		Engine.target_fps = 20
+		Engine.target_fps = 60
 	else:
 		Engine.time_scale = 3
 		Engine.target_fps = 90

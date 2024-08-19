@@ -41,19 +41,19 @@ func _on_player_game_over():
 	
 func _process(delta):
 	reward += 0.05
-	if python_script.training: # and Engine.get_frames_drawn() % 4 == 0:
-		var state = get_current_state()
-		#print(reward, state, done)
-		if old_state:
-			python_script.train_short_memory(old_state, action, reward, state, done)
-			python_script.remember(old_state, action, reward, state, done)
-		if done == true:
-			print(state)
-			python_script.done(score)
-			get_tree().reload_current_scene()
-		action = python_script.get_action(state)
-		if action:
-			player.jump()
+	var state = get_current_state()
+	#print(reward, state, done)
+	if old_state and python_script.training:
+		python_script.remember(old_state, action, reward, state, done)
+		if Engine.get_frames_drawn() % 4 == 0:
+			python_script.train_long_memory()
+	if done == true:
+		print(state)
+		python_script.done(score)
+		get_tree().reload_current_scene()
+	action = python_script.get_action(state)
+	if action:
+		player.jump()
 
 		old_state = state
 	
@@ -65,7 +65,7 @@ func get_current_state():
 	var c_pipe_distance = c_pipe.position.x - player.position.x
 	var c_pipe_y = c_pipe.position.y
 	#return [player_y, player_vel_y, c_pipe_distance, c_pipe_y]
-	var c_pipe_top_dist = player_y - c_pipe_y - 88
+	var c_pipe_top_dist = player_y - (c_pipe_y - 88)
 	var c_pipe_bottom_dist = c_pipe_y + 88 - player_y
 	return [player_vel_y, c_pipe_distance + 50, c_pipe_top_dist-21, c_pipe_bottom_dist-21]
 
